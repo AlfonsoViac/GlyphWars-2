@@ -106,24 +106,25 @@
   #scores-list .empty   { color: #444; font-style: italic; grid-column: 1/-1; }
   #controls-bar {
     margin-top: 10px;
-    font-size: 12px;
-    color: #444;
+    font-size: 15px;
+    color: #aaa;
     display: flex;
-    gap: 10px;
+    gap: 14px;
     align-items: center;
     flex-wrap: wrap;
     justify-content: center;
   }
   #controls-bar kbd {
-    border: 1px solid #2a2a4a;
-    border-radius: 3px;
-    padding: 1px 6px;
+    border: 1px solid #4455aa;
+    border-radius: 4px;
+    padding: 3px 10px;
     font-family: 'Courier New', monospace;
-    font-size: 11px;
-    color: #8899ff;
+    font-size: 13px;
+    color: #aabbff;
     background: #0d0d22;
   }
-  #controls-bar .dot { color: #2a2a4a; }
+  #controls-bar .dot { color: #3a3a6a; }
+  #controls-bar .label { color: #cccccc; }
 </style>
 </head>
 <body>
@@ -144,15 +145,15 @@
   <ul id="scores-list"><li><span class="empty">No scores yet — play to set one!</span></li></ul>
 </div>
 <div id="controls-bar">
-  <kbd>Mouse</kbd> move
+  <kbd>Mouse</kbd> <span class="label"></span>move</span>
   <span class="dot">·</span>
-  <kbd>Click</kbd> dash
+  <kbd>Click</kbd> <span class="label">dash</span>
   <span class="dot">·</span>
-  <kbd>Space</kbd> chrono shift
+  <kbd>Space</kbd> <span class="label">chrono shift (slow time)</span>
   <span class="dot">·</span>
-  Absorb matching glyphs
+  <span class="label">Absorb matching glyphs — avoid mismatched ones</span>
   <span class="dot">·</span>
-  Avoid mismatched ones
+  <span class="label">Glyph changes every 5 kills</span>
 </div>
 <script>
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -179,7 +180,7 @@ let keys = {};
 // ─── Narrator (ElevenLabs TTS) ───────────────────────────────────────────────
 // Set your ElevenLabs API key here (or leave empty to disable narrator)
 const ELEVENLABS_API_KEY = 'sk_7f72b5b34a9469a3dd3e97d2c4e37168b846cde78fd386e4';
-const NARRATOR_VOICE_ID  = 'z7U1SjrEq4fDDDriOQEN'; // Vivie — Powerful and Commanding female narrator
+const NARRATOR_VOICE_ID  = 'wa4sQVgbDDzUDEzJwch3'; // Eryn — Strong Female Military Commander
 
 async function speakNarrator(text) {
   if (!ELEVENLABS_API_KEY) return;
@@ -196,7 +197,7 @@ async function speakNarrator(text) {
         body: JSON.stringify({
           text,
           model_id: 'eleven_flash_v2_5',
-          voice_settings: { stability: 0.45, similarity_boost: 0.80, speed: 1.2 },
+          voice_settings: { stability: 0.45, similarity_boost: 0.80, speed: 0.9 },
         }),
       }
     );
@@ -983,7 +984,7 @@ function drawMenu() {
   GLYPHS.forEach((g, i) => {
     const angle = (i / GLYPHS.length) * Math.PI * 2 + t * 0.3;
     const x = W / 2 + Math.cos(angle) * 160;
-    const y = H / 2 + Math.sin(angle) * 100;
+    const y = H / 2 + Math.sin(angle) * 90;
     ctx.font = '28px serif';
     ctx.fillStyle = COLORS[i];
     ctx.globalAlpha = 0.5;
@@ -999,18 +1000,42 @@ function drawMenu() {
   ctx.fillStyle = '#ffffff';
   ctx.shadowColor = '#c77dff';
   ctx.shadowBlur = 30;
-  ctx.fillText('GLYPH WARS', W / 2, H / 2 - 40);
+  ctx.fillText('GLYPH WARS', W / 2, H / 2 - 60);
   ctx.shadowBlur = 0;
 
-  ctx.font = '14px monospace';
-  ctx.fillStyle = '#888888';
-  ctx.fillText('Absorb matching glyphs  ·  Avoid mismatches  ·  Adapt every 5 kills', W / 2, H / 2 + 10);
+  ctx.font = '15px monospace';
+  ctx.fillStyle = '#aaaaaa';
+  ctx.fillText('Absorb matching glyphs  ·  Avoid mismatches  ·  Glyph shifts every 5 kills', W / 2, H / 2 - 18);
+
+  // Controls
+  const controls = [
+    { key: 'Mouse',  desc: 'Move your warrior' },
+    { key: 'Click',  desc: 'Dash toward cursor' },
+    { key: 'Space',  desc: 'Chrono Shift — slow time' },
+  ];
+  controls.forEach((c, i) => {
+    const y = H / 2 + 18 + i * 26;
+    // key pill
+    ctx.font = 'bold 13px monospace';
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#aabbff';
+    ctx.fillText(c.key, W / 2 - 8, y);
+    // desc
+    ctx.font = '13px monospace';
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#cccccc';
+    ctx.fillText('— ' + c.desc, W / 2 + 8, y);
+  });
 
   const pulse = 0.7 + Math.sin(Date.now() / 400) * 0.3;
   ctx.globalAlpha = pulse;
-  ctx.font = '20px monospace';
+  ctx.font = 'bold 20px monospace';
+  ctx.textAlign = 'center';
   ctx.fillStyle = '#ffffff';
-  ctx.fillText('CLICK TO START', W / 2, H / 2 + 60);
+  ctx.shadowColor = '#c77dff';
+  ctx.shadowBlur = 10;
+  ctx.fillText('CLICK TO START', W / 2, H / 2 + 108);
+  ctx.shadowBlur = 0;
   ctx.globalAlpha = 1;
 }
 
@@ -1339,8 +1364,7 @@ let narratorPlayed = false;
 async function onFirstInteraction() {
   if (narratorPlayed) return;
   narratorPlayed = true;
-  window.removeEventListener('click',   onFirstInteraction);
-  window.removeEventListener('keydown', onFirstInteraction);
+  window.removeEventListener('pointerdown', onFirstInteraction);
   // Unlock AudioContext with a silent buffer first, then speak
   try {
     const ac = getAudioCtx();
@@ -1353,8 +1377,7 @@ async function onFirstInteraction() {
   } catch(e) {}
   speakNarrator('The cosmic arena awakens. Absorb your kin. Destroy the rest. Good luck, warrior.');
 }
-window.addEventListener('click',   onFirstInteraction);
-window.addEventListener('keydown', onFirstInteraction);
+window.addEventListener('pointerdown', onFirstInteraction);
 </script>
 </body>
 </html>
