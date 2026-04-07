@@ -431,9 +431,11 @@ async function startMusic() {
 
 function setMusicSpeed(scale) {
   if (!musicSource || !audioCtx) return;
-  const waveBoost = 1 + (player.wave - 1) * 0.06; // +6% per wave
+  const waveBoost = 1 + (player.wave - 1) * 0.06;
   const target = (scale < 1 ? CHRONO_SCALE : 1.0) * waveBoost;
-  musicSource.playbackRate.setTargetAtTime(target, audioCtx.currentTime, 0.05);
+  // Snap back to normal immediately when chrono runs out; smooth into slow-mo
+  const timeConstant = scale < 1 ? 0.05 : 0.01;
+  musicSource.playbackRate.setTargetAtTime(target, audioCtx.currentTime, timeConstant);
 }
 
 function stopMusic() {
