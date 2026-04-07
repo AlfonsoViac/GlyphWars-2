@@ -734,12 +734,12 @@ function spawnInterval() {
 function update() {
   if (gameState === 'paused' || gameState !== 'playing') return;
 
-  const isChrono = keys[' '] && player.chrono > 0;
+  const isChrono = keys[' '] && player.chrono >= 1;
   const timeScale = isChrono ? CHRONO_SCALE : 1.0;
   setMusicSpeed(timeScale);
 
   // Chrono energy
-  if (keys[' '] && player.chrono > 0) {
+  if (isChrono) {
     player.chrono = Math.max(0, player.chrono - CHRONO_DRAIN);
   } else {
     player.chrono = Math.min(player.maxChrono, player.chrono + CHRONO_REGEN);
